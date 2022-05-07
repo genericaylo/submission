@@ -1,4 +1,38 @@
-Welcome to the submission wiki!
+# Overview
+The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission *Towards automating security requirements
+implementation using secure workflow patterns.*
+
+The listing can be compiled and used as-is by the SHOP2 planner. Installation instructions are provided below.
+
+# The Model - Key aspects
+
+The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use.
+
+
+## Computational Devices
+Participants in the workflows are assumed to have access to the following devices:
+* A PC or other computer connected to the internet. The PC is is the only devices where cryptographic functions can be executed.
+* A mobile phone 
+* 
+
+
+We assume that the principal computational device that participants are using is a PC or laptop. Cryptographic functions are performed there 
+
+## Formats and Media
+Information is at any point in time available with an actor. A special predicate is used to signify this:
+
+```lisp
+(has ?agent ?info ?medium ?format)
+```
+While ?agent and ?info can be anything, ?medimum and ?format are restricted as follows:
+
+Possibilities for medium:
+* Local Drive
+* 
+
+
+
+
 ```lisp
 (in-package :shop-user)
 ; This extremely simple example shows some of the most essential
