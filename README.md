@@ -1,34 +1,128 @@
 # Overview
-The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission *Towards automating security requirements
-implementation using secure workflow patterns.*
-
+The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission Towards automating security requirements implementation using secure workflow patterns. 
 The listing can be compiled and used as-is by the SHOP2 planner. Installation instructions are provided below.
 
-# The Model - Key aspects
-
-The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use.
-
+## The Model - Key aspects
+The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use. 
+The possibilities are by no means meant to be exhaustive but rather to provide an illustration of the reasoning framework that is proposed. 
 
 ## Computational Devices
 Participants in the workflows are assumed to have access to the following devices:
-* A PC or other computer connected to the internet. The PC is is the only devices where cryptographic functions can be executed.
-* A mobile phone 
-* 
-
-
-We assume that the principal computational device that participants are using is a PC or laptop. Cryptographic functions are performed there 
-
+* A PC or other computer connected to the internet. The PC is the only devices where cryptographic functions can be executed.
+* A mobile phone, capable of sending text messages with file attachments. Actors can connect their phone to their PC to exchange files. 
+* A printer and a scanner (with no handwriting recognition). 
 ## Formats and Media
-Information is at any point in time available with an actor. A special predicate is used to signify this:
 
+Information is at any point in time available with an actor. A special predicate is used to signify this:
 ```lisp
 (has ?agent ?info ?medium ?format)
 ```
-While ?agent and ?info can be anything, ?medimum and ?format are restricted as follows:
-
+While ``` ?agent ``` and ```?info``` can be anything, ?medium and ?format are restricted as follows:
 Possibilities for medium:
-* Local Drive
-* 
+* Local-drive: meaning the hard-drive of the PC
+* shared-folder: implies that the file exists also in the cloud and accessible for anyone with access to the cloud account
+* mailbox: the inbox or outbox of an agent’s email account, which is assumed to reside both on a server and on a local copy.
+* phone: any part of the agent’s smartphone (e.g. text messages, file-system or email app), such that hacking the phone implies full access to that location.
+* Usb: shorthand for any portable digital storage device, including e.g. CDs, DVDs or other media.
+* Physical: any physical location in which an agent has access: e.g., their pocket or their desk. 
+Possibilities for format:
+* digital-file
+* paper which can be either printed (thus, OCR-able) or handwritten.
+Information can be scanned, typed-up and copied from one machine to another. Printing information is omitted for simplicity. When appropriate, we assume that users will naturally expand the attack by copying the information from one medium to the other for example:
+* Information in shared-drive will eventually sync to the local-drive
+* Information in the e-mailbox, will be copied to local-drive.
+## Transferring information
+Information can be transferred in any of the following ways:
+* Email.
+* SMS, i.e., text messaging, which is assumed to also support attachments.
+* Phone-call oral exchange, whereby one actor is calling another and offers the information verbally. The other actor is assumed to jot down the information manually in their physical space. 
+* In person exchange, whereby one actor visits the physical space of another actor and delivers the information in paper or digital format (e.g. usb).
+* In person oral exchange, like phone-call oral exchange but resulting from a visit to another persons space.
+
+## Encryption and Decryption Methods
+
+Encryption can be symmetric or asymmetric. In the former case the participants exchange a shared key and use their document viewer or word processor to protect/encrypt the document with the key. As such no extra software is required. However, the shared key needs to be exchanged securely. 
+
+For asymmetric encryption public/private key pairs need to be generated and the public parts exchanged in a way that is not necessarily secured. We however assume that the standard versions of document viewers and processors do not trivially support public key cryptography. As such specialized software needs to be installed for such, such as for example GnuPG.
+
+## Digital Signatures
+Digital signing is assumed to be asymmetric through the use of third-party software such as GnuPG. It is further assumed that signing and encryption take place independently and in this order when both are needed. 
+
+## Key management
+Key management is a step that must precede encryption or signing, and involves key generation and sharing. The sharing of keys follows the same methods as the sharing of any other information. However, advanced key establishment protocols that may need specialized software or synchronous communication are not currently included as methods, due to being unrelated to the context and examples of use we are considering here. Thus, shared key exchange, which is sensitive information, must take place using a channel that is assumed to be secure (e.g. in person exchange, a phone call or other method) depending on the *vulnerability assumptions* in effect. 
+
+## Attack Trees
+Attack trees are simple axioms connecting a high-level characterization of the attack (the negation of a security requirement) with a logical formula describing conditions under which the security requirement is breached. Notice that the components of the formula appear in any of: effects and preconditions of operations and/or methods, vulnerability assumptions, domain assumptions. 
+
+## Domain and Security Requirements
+As mentioned in the paper a special action is added in the domain specification for the purpose of enforcing its precondition. This is due to the fact that SHOP2’s problem specification is written in the form of a top level method rather than a goal state. Thus a method we call accomplishment is introduced with preconditions being security as well as other domain requirements. Successful fulfilment of these preconditions allows the planner to execute “done”, a dummy unconditional action.
+
+## Problem Specification
+### Domain and Vulnerability Assumptions
+The domain and vulnerability assumptions are part of the problem specification, specifically the description of the of the initial state.
+
+### Main Problem Definition
+Problem definition is based on the specification of the top-level method (in our case “transmit-information”) preceded by a manage-keys call and followed by “accomplishment”, which must be achieved in any successful plan. [Obviously the three constituent methods can be further abstracted into a top level method.] 
+
+```lisp
+	(:ordered
+		(manage-keys doctor patient)
+		(transmit-information doctor patient proof-of-visit)
+		(accomplishment)
+	)
+```
+
+# Running 
+To identify plans, SHOP2 requires running 
+```lisp
+(find-plans 'problem1 :verbose :plans :optimize-cost t)
+```
+
+## Running Example
+
+Let us now explore the example of the interaction between the supplier and the contractor in the running example. Recall that the interaction is that the contractor places an order to the supplier, who, in turn issues an invoice to be sent to the contractor.
+
+Case 1 – no security requirements and not vulnerability assumptions.
+
+Case 2 – Authenticate the order, no vulnerability assumptions.
+
+Case 3 – Authenticate the order, encrypt the invoice, no vulnerability assumptions.
+
+Case 4 – Authenticate the order, encrypt the invoice, compromised networks.
+
+
+Case 4 – Authenticate the order, encrypt the invoice, compromised networks and phones.
+
+
+```text
+Defining problem PROBLEM1 ...
+---------------------------------------------------------------------------
+Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
+
+Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
+           1  3765.0  3765.0    1796411   43471904   640.016    642.506
+
+Plans:
+(((!NA) (!INSTALL-ENCRYPTION-SOFTWARE CONTRACTOR)
+  (!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
+  (!GENERATE-ASYMMETRIC-KEYS CONTRACTOR) (!NA)
+  (!EMAIL CONTRACTOR SUPPLIER (KEY CONTRACTOR PUBLIC)) (!NA) (!NA) (!NA)
+  (!ASYMMETRIC-SIGN CONTRACTOR ORDER (KEY CONTRACTOR PRIVATE)) (!NA)
+  (!EMAIL CONTRACTOR SUPPLIER (SIGNED ORDER (KEY CONTRACTOR PRIVATE))) (!NA)
+  (!ASYMMETRIC-VERIFY SUPPLIER CONTRACTOR
+   (SIGNED ORDER (KEY CONTRACTOR PRIVATE)) (KEY CONTRACTOR PUBLIC))
+  (!NA) (!NA) (!NA)
+  (!ASYMMETRIC-ENCRYPT SUPPLIER CONTRACTOR INVOICE (KEY CONTRACTOR PUBLIC))
+  (!EMAIL SUPPLIER CONTRACTOR (ENCRYPTED INVOICE (KEY CONTRACTOR PUBLIC)))
+  (!ASYMMETRIC-DECRYPT SUPPLIER CONTRACTOR
+   (ENCRYPTED INVOICE (KEY CONTRACTOR PUBLIC)))
+  (!NA) (!NA) (!DONE)))
+```
+
+
+
+
+# The Listing
 
 
 
