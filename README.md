@@ -23,7 +23,7 @@ Possibilities for medium:
 * shared-folder: implies that the file exists also in the cloud and accessible for anyone with access to the cloud account
 * mailbox: the inbox or outbox of an agent’s email account, which is assumed to reside both on a server and on a local copy.
 * phone: any part of the agent’s smartphone (e.g. text messages, file-system or email app), such that hacking the phone implies full access to that location.
-* Usb: shorthand for any portable digital storage device, including e.g. CDs, DVDs or other media.
+* USB: shorthand for any portable digital storage device, including e.g. CDs, DVDs or other media.
 * Physical: any physical location in which an agent has access: e.g., their pocket or their desk. 
 Possibilities for format:
 * digital-file
@@ -36,7 +36,7 @@ Information can be transferred in any of the following ways:
 * Email.
 * SMS, i.e., text messaging, which is assumed to also support attachments.
 * Phone-call oral exchange, whereby one actor is calling another and offers the information verbally. The other actor is assumed to jot down the information manually in their physical space. 
-* In person exchange, whereby one actor visits the physical space of another actor and delivers the information in paper or digital format (e.g. usb).
+* In person exchange, whereby one actor visits the physical space of another actor and delivers the information in paper or digital format (e.g. USB key).
 * In person oral exchange, like phone-call oral exchange but resulting from a visit to another persons space.
 
 ## Encryption and Decryption Methods
@@ -159,7 +159,7 @@ Plans:
   (!NA) (!NA) (!NA) (!DONE)))
 ```
 
-When looking at the plan we discard all the (!NA) actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contrctor, without any security steps. Note also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
+When looking at the plan we discard all the (!NA) actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contractor, without any security steps. Note also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
 
 
 ### Case 2 – Invoice confidential.
@@ -174,7 +174,7 @@ Let us now assume that we specify an authentication requirement: the contractor 
 		(not (intercept-successful supplier contractor invoice))
 ```
 
-HOwever, we do not add any vulnerability assumptions. The planner will return the exact same plan:
+However, we do not add any vulnerability assumptions. The planner will return the exact same plan:
 
 ```text
 Defining problem PROBLEM1 ...
@@ -189,7 +189,7 @@ Plans:
   (!NA) (!NA) (!NA) (!DONE)))
 ```
 
-That is, there will be no security steps when the attackers are not assumed to engage in any attack. If we do assume we protect against certain attacks, such as for example, compromized mailboxes and networks then we add the corresponding vulnerability assumptions:
+That is, there will be no security steps when the attackers are not assumed to engage in any attack. If we do assume we protect against certain attacks, such as for example, compromised mailboxes and networks then we add the corresponding vulnerability assumptions:
 
 
 ```lisp
@@ -260,7 +260,7 @@ Plans:
   (!NA) (!DONE)))
 ```
 
-In this case the supplier will digitally sign the document prior to sending it to the contractor. However, encryption software needs to be installed (e.g. [OpenPGP](https://www.openpgp.org/software/kleopatra/)) and the supplier needs to generate a public-private key pair and share the public one. It does not matter that the public key goes through a compromized medium (email).
+In this case the supplier will digitally sign the document prior to sending it to the contractor. However, encryption software needs to be installed (e.g. [OpenPGP](https://www.openpgp.org/software/kleopatra/)) and the supplier needs to generate a public-private key pair and share the public one. It does not matter that the public key goes through a compromised medium (email).
 
 
 ### Case 4 – Authenticate _and_ encrypt the invoice.
@@ -296,9 +296,9 @@ Plans:
 
 ```
 
-The above plan suggest that the document will be signed using a public key exchanged by email and then symmetrically encrypted, with key exchanged over a phonecall, before it is sent over by email for decryption and verification.
+The above plan suggest that the document will be signed using a public key exchanged by email and then symmetrically encrypted, with key exchanged over a phone call, before it is sent over by email for decryption and verification.
 
-One may doubt however that this is the most convenient way of doing it. Indeed the specification does not have a fine-tuned cost scheme at this point that would catch that since assymetric encryption software has been installed, encryption may as well be assymetric, saving a phone call. Even then, though, the anaysts can simply artificially disallow symmetric encryption, e.g. through an ad-hoc precondition or assumptions such as:
+One may doubt however that this is the most convenient way of doing it. Indeed the specification does not have a fine-tuned cost scheme at this point that would catch that since asymmetric encryption software has been installed, encryption may as well be asymmetric, saving a phone call. Even then, though, the analysts can simply artificially disallow symmetric encryption, e.g. through an ad-hoc precondition or assumptions such as:
 
 ```lisp
 		; ++++++++++++++++++++++++++++++++++++++++++++++
@@ -338,7 +338,7 @@ Plans:
   (!NA) (!DONE)))
 ```
 
-... which involes assymetric signing, encryption, emailing, decryption and verification.
+... which involves asymmetric signing, encryption, emailing, decryption and verification.
 
 # The Listing
 
