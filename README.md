@@ -80,18 +80,172 @@ To identify plans, SHOP2 requires running
 
 ## Running Example
 
-Let us now explore the example of the interaction between the supplier and the contractor in the running example. Recall that the interaction is that the contractor places an order to the supplier, who, in turn issues an invoice to be sent to the contractor.
+Let us now explore the example of the interaction between the supplier and the contractor in the running example of the paper. Recall that the interaction is that the contractor places an order to the supplier, who, in turn issues an invoice to be sent to the contractor.
 
-Case 1 – no security requirements and not vulnerability assumptions.
+### Case 1 – No security requirements and not vulnerability assumptions.
 
-Case 2 – Authenticate the order, no vulnerability assumptions.
+We start with the scenario in which no security requirements are given. 
 
-Case 3 – Authenticate the order, encrypt the invoice, no vulnerability assumptions.
+```lisp
+    (:method 
+    (final) 
+	(	; ++++++++++++++++++++++++++++++++++++++++++
+		; + D O M A I N    R E Q U I R E M E N T S +
+		; ++++++++++++++++++++++++++++++++++++++++++
+		
+		(can-read contractor invoice)
+		
+	   
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+		; + S E C U R I T Y    R E Q U I R E M E N T S +
+		; ++++++++++++++++++++++++++++++++++++++++++++++
 
-Case 4 – Authenticate the order, encrypt the invoice, compromised networks.
+		;empty
+	)
+		(done))
+    )
+```
+
+... and...
+
+```lisp
+(defproblem problem1 sec
+	(
+		; +++++++++++++++++++++++++++++++++++++++++
+		; + D O M A I N    A S S U M P T I O N S  +
+		; +++++++++++++++++++++++++++++++++++++++++
+	   
+		(has supplier invoice local-drive digital-file)
+
+		(allow email)
+		(allow sms)
+		(allow phonecall)
+
+		(has contractor supplier email-address)
+		(has supplier contractor email-address)
+		(has contractor supplier phone-number)
+		(has supplier contractor phone-number)
+
+   
+		; +++++++++++++++++++++++++++++++++
+		; +   V U L N E R A B I L I T Y   +     
+		; +     A S S U M P T I O N S     +
+		; +++++++++++++++++++++++++++++++++
+		
+		;empty
+	)
+	
+	(:ordered
+		(manage-keys supplier contractor)
+		(transmit-information supplier contractor invoice)
+		(final)
+	)
+	
+) ; end of problem specification
+```
+
+In such case the planner will not be constrained in any way to produce the cheapest possible plan, which may involve the simple transfer of the document from sender to recipient in plaintext, thus plan:
+
+```text
+Defining problem PROBLEM1 ...
+---------------------------------------------------------------------------
+Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
+
+Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
+           1  -178.0  -178.0        392       6902     0.125      0.128
+
+Plans:
+(((!NA) (!NA) (!NA) (!NA) (!NA) (!NA) (!EMAIL SUPPLIER CONTRACTOR INVOICE)
+  (!NA) (!NA) (!NA) (!DONE)))
+```
+
+When looking at the plan we discard all the (!NA) actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contrctor, without any security steps. Note also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
 
 
-Case 4 – Authenticate the order, encrypt the invoice, compromised networks and phones.
+### Case 3 – Invoice confidential, no vulnerability assumptions.
+
+Let us now assume that we specify an authentication requirement: the contractor wants to be able to authenticate that the invoice comes indeed from the supplier:
+
+```lisp
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+		; + S E C U R I T Y    R E Q U I R E M E N T S +
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+
+		(not (intercept-successful supplier contractor invoice))
+```
+
+HOwever, we do not add any vulnerability assumptions. The planner will return the exact same plan:
+
+```text
+Defining problem PROBLEM1 ...
+---------------------------------------------------------------------------
+Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
+
+Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
+           1  -178.0  -178.0        392       7208     0.109      0.111
+
+Plans:
+(((!NA) (!NA) (!NA) (!NA) (!NA) (!NA) (!EMAIL SUPPLIER CONTRACTOR INVOICE)
+  (!NA) (!NA) (!NA) (!DONE)))
+```
+
+That is, there will be no security steps when the attackers are not assumed to engage in any attack. If we do assume we protect against certain attacks, such as for example, compromized mailboxes and networks then we add the corresponding vulnerability assumptions:
+
+
+```lisp
+		; +++++++++++++++++++++++++++++++++
+		; +   V U L N E R A B I L I T Y   +     
+		; +     A S S U M P T I O N S     +
+		; +++++++++++++++++++++++++++++++++
+
+		(is-compromised network)
+		(is-compromised contractor mailbox)
+```
+
+Then the planner will resort to encryption:
+
+```text
+Defining problem PROBLEM1 ...
+---------------------------------------------------------------------------
+Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
+
+Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
+           1   265.0   265.0      35122     841859     9.672      9.659
+
+Plans:
+(((!NA) (!NA) (!GENERATE-SYMMETRIC-KEY SUPPLIER CONTRACTOR) (!NA)
+  (!BY-PHONECALL-EXCHANGE SUPPLIER CONTRACTOR (KEY SUPPLIER CONTRACTOR SHARED))
+  (!TYPE-UP CONTRACTOR (KEY SUPPLIER CONTRACTOR SHARED)) (!NA) (!NA)
+  (!SYMMETRIC-ENCRYPT SUPPLIER CONTRACTOR INVOICE
+   (KEY SUPPLIER CONTRACTOR SHARED))
+  (!EMAIL SUPPLIER CONTRACTOR
+   (ENCRYPTED INVOICE (KEY SUPPLIER CONTRACTOR SHARED)))
+  (!SYMMETRIC-DECRYPT CONTRACTOR SUPPLIER INVOICE) (!NA) (!NA) (!DONE)))
+
+``` 
+
+The plan says that the supplier now needs to generate a key, call the contractor to share the key and then symmetrically encrypt the document before sending it by email. In practice this means that the PDF or DOC is protected with a password within the corresponding document editing or word processing tools; and the password is exchanged via a channel for which no vulnerability has been assumed. The planner avoids asymmetric encryption which is more expensive as it requires installation of specialized software.
+
+### Case 3 – Authenticate the invoice.
+
+Let us now assume that we specify an authenticity requirement: the contractor does not want unauthorised users to read the invoice. We then consider the following while keeping all else as is:
+
+```lisp
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+		; + S E C U R I T Y    R E Q U I R E M E N T S +
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+
+		(authenticated contractor supplier invoice)
+```
+
+
+
+
+### Case 3 – Authenticate the order, encrypt the invoice, no vulnerability assumptions.
+
+### Case 4 – Authenticate the order, encrypt the invoice, compromised networks.
+
+### Case 4 – Authenticate the order, encrypt the invoice, compromised networks and phones.
 
 
 ```text
