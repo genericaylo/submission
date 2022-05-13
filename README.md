@@ -162,7 +162,7 @@ Plans:
 When looking at the plan we discard all the (!NA) actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contrctor, without any security steps. Note also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
 
 
-### Case 3 – Invoice confidential, no vulnerability assumptions.
+### Case 2 – Invoice confidential.
 
 Let us now assume that we specify an authentication requirement: the contractor wants to be able to authenticate that the invoice comes indeed from the supplier:
 
@@ -228,7 +228,7 @@ The plan says that the supplier now needs to generate a key, call the contractor
 
 ### Case 3 – Authenticate the invoice.
 
-Let us now assume that we specify an authenticity requirement: the contractor does not want unauthorised users to read the invoice. We then consider the following while keeping all else as is:
+Let us now assume that we specify an authenticity requirement: the contractor does not want unauthorised users to read the invoice. We then consider the following while keeping all else as-is:
 
 ```lisp
 		; ++++++++++++++++++++++++++++++++++++++++++++++
@@ -238,15 +238,7 @@ Let us now assume that we specify an authenticity requirement: the contractor do
 		(authenticated contractor supplier invoice)
 ```
 
-
-
-
-### Case 3 – Authenticate the order, encrypt the invoice, no vulnerability assumptions.
-
-### Case 4 – Authenticate the order, encrypt the invoice, compromised networks.
-
-### Case 4 – Authenticate the order, encrypt the invoice, compromised networks and phones.
-
+The plan that will return now is different:
 
 ```text
 Defining problem PROBLEM1 ...
@@ -254,27 +246,99 @@ Defining problem PROBLEM1 ...
 Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
 
 Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
-           1  3765.0  3765.0    1796411   43471904   640.016    642.506
+           1  2544.0  2544.0      10299     225959     2.625      2.624
 
 Plans:
-(((!NA) (!INSTALL-ENCRYPTION-SOFTWARE CONTRACTOR)
-  (!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
-  (!GENERATE-ASYMMETRIC-KEYS CONTRACTOR) (!NA)
-  (!EMAIL CONTRACTOR SUPPLIER (KEY CONTRACTOR PUBLIC)) (!NA) (!NA) (!NA)
-  (!ASYMMETRIC-SIGN CONTRACTOR ORDER (KEY CONTRACTOR PRIVATE)) (!NA)
-  (!EMAIL CONTRACTOR SUPPLIER (SIGNED ORDER (KEY CONTRACTOR PRIVATE))) (!NA)
-  (!ASYMMETRIC-VERIFY SUPPLIER CONTRACTOR
-   (SIGNED ORDER (KEY CONTRACTOR PRIVATE)) (KEY CONTRACTOR PUBLIC))
-  (!NA) (!NA) (!NA)
-  (!ASYMMETRIC-ENCRYPT SUPPLIER CONTRACTOR INVOICE (KEY CONTRACTOR PUBLIC))
-  (!EMAIL SUPPLIER CONTRACTOR (ENCRYPTED INVOICE (KEY CONTRACTOR PUBLIC)))
-  (!ASYMMETRIC-DECRYPT SUPPLIER CONTRACTOR
-   (ENCRYPTED INVOICE (KEY CONTRACTOR PUBLIC)))
-  (!NA) (!NA) (!DONE)))
+(((!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
+  (!INSTALL-ENCRYPTION-SOFTWARE CONTRACTOR)
+  (!GENERATE-ASYMMETRIC-KEYS SUPPLIER) (!NA)
+  (!EMAIL SUPPLIER CONTRACTOR (KEY SUPPLIER PUBLIC)) (!NA) (!NA) (!NA) (!NA)
+  (!ASYMMETRIC-SIGN SUPPLIER INVOICE (KEY SUPPLIER PRIVATE)) (!NA)
+  (!EMAIL SUPPLIER CONTRACTOR (SIGNED INVOICE (KEY SUPPLIER PRIVATE))) (!NA)
+  (!ASYMMETRIC-VERIFY CONTRACTOR SUPPLIER
+   (SIGNED INVOICE (KEY SUPPLIER PRIVATE)) (KEY SUPPLIER PUBLIC))
+  (!NA) (!DONE)))
 ```
 
+In this case the supplier will digitally sign the document prior to sending it to the contractor. However, encryption software needs to be installed (e.g. [OpenPGP](https://www.openpgp.org/software/kleopatra/)) and the supplier needs to generate a public-private key pair and share the public one. It does not matter that the public key goes through a compromized medium (email).
 
 
+### Case 4 – Authenticate _and_ encrypt the invoice.
+
+Let us finally assume that both authentication and encryption are needed:
+
+```text
+Defining problem PROBLEM1 ...
+---------------------------------------------------------------------------
+Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
+
+Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
+           1  2788.0  2788.0      38165     856093    10.047     10.047
+
+Plans:
+(((!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
+  (!INSTALL-ENCRYPTION-SOFTWARE CONTRACTOR)
+  (!GENERATE-ASYMMETRIC-KEYS SUPPLIER) (!NA)
+  (!EMAIL SUPPLIER CONTRACTOR (KEY SUPPLIER PUBLIC)) (!NA) (!NA)
+  (!GENERATE-SYMMETRIC-KEY SUPPLIER CONTRACTOR) (!NA)
+  (!BY-PHONECALL-EXCHANGE SUPPLIER CONTRACTOR (KEY SUPPLIER CONTRACTOR SHARED))
+  (!TYPE-UP CONTRACTOR (KEY SUPPLIER CONTRACTOR SHARED)) (!NA)
+  (!ASYMMETRIC-SIGN SUPPLIER INVOICE (KEY SUPPLIER PRIVATE))
+  (!SYMMETRIC-ENCRYPT-SIGNED SUPPLIER (SIGNED INVOICE (KEY SUPPLIER PRIVATE))
+   (KEY SUPPLIER CONTRACTOR SHARED))
+  (!EMAIL SUPPLIER CONTRACTOR
+   (ENCRYPTED (SIGNED INVOICE (KEY SUPPLIER PRIVATE))
+    (KEY SUPPLIER CONTRACTOR SHARED)))
+  (!SYMMETRIC-DECRYPT-SIGNED CONTRACTOR SUPPLIER INVOICE)
+  (!ASYMMETRIC-VERIFY CONTRACTOR SUPPLIER
+   (SIGNED INVOICE (KEY SUPPLIER PRIVATE)) (KEY SUPPLIER PUBLIC))
+  (!NA) (!DONE)))
+
+```
+
+The above plan suggest that the document will be signed using a public key exchanged by email and then symmetrically encrypted, with key exchanged over a phonecall, before it is sent over by email for decryption and verification.
+
+One may doubt however that this is the most convenient way of doing it. Indeed the specification does not have a fine-tuned cost scheme at this point that would catch that since assymetric encryption software has been installed, encryption may as well be assymetric, saving a phone call. Even then, though, the anaysts can simply artificially disallow symmetric encryption, e.g. through an ad-hoc precondition or assumptions such as:
+
+```lisp
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+		; + S E C U R I T Y    R E Q U I R E M E N T S +
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+
+		... [as above]
+		(not 	(has supplier (key supplier contractor shared) local-drive digital-file)
+```
+So now, we demand that at no point is there a shared key generated. The planner will respond as follows:
+
+```text
+
+Defining problem PROBLEM1 ...
+---------------------------------------------------------------------------
+Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
+
+Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
+           1  3526.0  3526.0     215113    4880945    60.656     60.645
+
+Plans:
+(((!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
+  (!INSTALL-ENCRYPTION-SOFTWARE CONTRACTOR)
+  (!GENERATE-ASYMMETRIC-KEYS SUPPLIER) (!NA)
+  (!EMAIL SUPPLIER CONTRACTOR (KEY SUPPLIER PUBLIC)) (!NA) (!NA) (!NA)
+  (!GENERATE-ASYMMETRIC-KEYS CONTRACTOR) (!NA)
+  (!EMAIL CONTRACTOR SUPPLIER (KEY CONTRACTOR PUBLIC)) (!NA) (!NA) (!NA)
+  (!ASYMMETRIC-SIGN SUPPLIER INVOICE (KEY SUPPLIER PRIVATE))
+  (!ASYMMETRIC-ENCRYPT SUPPLIER CONTRACTOR
+   (SIGNED INVOICE (KEY SUPPLIER PRIVATE)) (KEY CONTRACTOR PUBLIC))
+  (!EMAIL SUPPLIER CONTRACTOR
+   (ENCRYPTED (SIGNED INVOICE (KEY SUPPLIER PRIVATE)) (KEY CONTRACTOR PUBLIC)))
+  (!ASYMMETRIC-DECRYPT-SIGNED SUPPLIER CONTRACTOR
+   (SIGNED INVOICE (KEY SUPPLIER PRIVATE)))
+  (!ASYMMETRIC-VERIFY CONTRACTOR SUPPLIER
+   (SIGNED INVOICE (KEY SUPPLIER PRIVATE)) (KEY SUPPLIER PUBLIC))
+  (!NA) (!DONE)))
+```
+
+... which involes assymetric signing, encryption, emailing, decryption and verification.
 
 # The Listing
 
