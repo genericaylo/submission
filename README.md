@@ -1,6 +1,6 @@
 # Overview
-The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission Towards automating security requirements implementation using secure workflow patterns. 
-The listing can be compiled and used as-is by the SHOP2 planner. Installation instructions are provided below.
+The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission *"Towards automating security requirements implementation using secure workflow patterns"* 
+The listing, found at the bottom, can be compiled and used as-is by the SHOP2 planner. Installation instructions are provided below.
 
 ## The Model - Key aspects
 The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use. 
@@ -340,10 +340,16 @@ Plans:
 
 ... which involves asymmetric signing, encryption, emailing, decryption and verification.
 
+
+# Installation Instructions (Windows)
+
+* Install a list in your system. We have tryied it with [Steel Bank Common Lisp](http://www.sbcl.org/).
+* Install SHOP3 following direction [in the github page](https://github.com/shop-planner/shop3). We used the quicklisp installation option solution successfully.
+* Save the listing below in a .lisp file, such as ``` Example.lisp```
+* Once in sbcl and SHOP3 is loaded (e.g. through a ```lisp (load "~/init.lisp")```, run ```lisp (load "Example.lisp")```
+* You can make changes to the .lisp file and reload as above; definitions will be replaced.
+
 # The Listing
-
-
-
 
 ```lisp
 (in-package :shop-user)
