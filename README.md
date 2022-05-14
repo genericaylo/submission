@@ -24,25 +24,32 @@
 
 
 # Overview
-The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission *"Towards automating security requirements implementation using secure workflow patterns"* 
+The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission *"Towards automating security requirements implementation using secure workflow patterns"*. The listing is presented at the bottom of this page and can also be downloaded as a LISP file in the repository. It contains: (a) workflow patterns for securely transmitting information between two actors using various communication channels and utilizing cryptographic primitives, (b) attack trees for confidentiality and integrity. In later sections, we use these assets to reason with various security requirements and vulnerability assumptions. 
+
+The presented formalization here is much more complex and uses different conventions than the ones in the paper (e.g. second order LISP-like terms are extensively used), without, however, departing from the main ideas and vision in the paper. The formalization can be seen as one of the many possible that can be devised for solving the same problem domain (securely transferring documents between two parties). The formalization of choice is a result of balancing between expressiveness, exact reasoning needs (e.g. do we need to reason about many different channels?), and computational efficiency and is a central piece of our future research agenda.
+
 The listing, found at the bottom, can be compiled and used as-is by the SHOP2 planner. Installation instructions are provided below.
 
-## The Model - Key aspects
-The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use. 
-The possibilities are by no means meant to be exhaustive but rather to provide an illustration of the reasoning framework that is proposed. 
+
+# The Model
+
+## Key aspects
+The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use. The possibilities are by no means meant to be exhaustive but rather to provide an illustration of the reasoning framework that is proposed. 
 
 ## Computational Devices
 Participants in the workflows are assumed to have access to the following devices:
 * A PC or other computer connected to the internet. The PC is the only devices where cryptographic functions can be executed.
 * A mobile phone, capable of sending text messages with file attachments. Actors can connect their phone to their PC to exchange files. 
 * A printer and a scanner (with no handwriting recognition). 
+* 
 ## Formats and Media
 
 Information is at any point in time available with an actor. A special predicate is used to signify this:
 ```lisp
 (has ?agent ?info ?medium ?format)
 ```
-While ``` ?agent ``` and ```?info``` can be anything, ?medium and ?format are restricted as follows:
+While ``` ?agent ``` and ```?info``` can be anything, ```?medium``` and ```?format``` are restricted as follows:
+
 Possibilities for medium:
 * Local-drive: meaning the hard-drive of the PC
 * shared-folder: implies that the file exists also in the cloud and accessible for anyone with access to the cloud account
@@ -50,12 +57,16 @@ Possibilities for medium:
 * phone: any part of the agent’s smartphone (e.g. text messages, file-system or email app), such that hacking the phone implies full access to that location.
 * USB: shorthand for any portable digital storage device, including e.g. CDs, DVDs or other media.
 * Physical: any physical location in which an agent has access: e.g., their pocket or their desk. 
+
 Possibilities for format:
 * digital-file
 * paper which can be either printed (thus, OCR-able) or handwritten.
+
 Information can be scanned, typed-up and copied from one machine to another. Printing information is omitted for simplicity. When appropriate, we assume that users will naturally expand the attack by copying the information from one medium to the other for example:
 * Information in shared-drive will eventually sync to the local-drive
 * Information in the e-mailbox, will be copied to local-drive.
+
+
 ## Transferring information
 Information can be transferred in any of the following ways:
 * Email.
@@ -66,34 +77,68 @@ Information can be transferred in any of the following ways:
 
 ## Encryption and Decryption Methods
 
-Encryption can be symmetric or asymmetric. In the former case the participants exchange a shared key and use their document viewer or word processor to protect/encrypt the document with the key. As such no extra software is required. However, the shared key needs to be exchanged securely. 
+Encryption can be _symmetric_ or _asymmetric_. In the former case the participants exchange a shared key and use their document viewer or word processor to protect/encrypt the document with the key. As such no extra software is required. However, the shared key needs to be exchanged securely. 
 
-For asymmetric encryption public/private key pairs need to be generated and the public parts exchanged in a way that is not necessarily secured. We however assume that the standard versions of document viewers and processors do not trivially support public key cryptography. As such specialized software needs to be installed for such, such as for example GnuPG.
+For asymmetric encryption public/private key pairs need to be generated and the public parts exchanged in a way that is not necessarily secured. We however assume that the standard versions of document viewers and processors do not trivially support public key cryptography. As such, specialized software needs to be installed for such, such as for example [OpenPGP](https://www.openpgp.org/).
 
 ## Digital Signatures
-Digital signing is assumed to be asymmetric through the use of third-party software such as GnuPG. It is further assumed that signing and encryption take place independently and in this order when both are needed. 
+Digital signing is assumed to be asymmetric through the use of third-party software such as [OpenPGP](https://www.openpgp.org/). It is further assumed that signing and encryption take place independently and in this order when both are needed. 
 
 ## Key management
-Key management is a step that must precede encryption or signing, and involves key generation and sharing. The sharing of keys follows the same methods as the sharing of any other information. However, advanced key establishment protocols that may need specialized software or synchronous communication are not currently included as methods, due to being unrelated to the context and examples of use we are considering here. Thus, shared key exchange, which is sensitive information, must take place using a channel that is assumed to be secure (e.g. in person exchange, a phone call or other method) depending on the *vulnerability assumptions* in effect. 
+Key management is a step that generally precede encryption and/or signing, and involves key generation and sharing. The sharing of keys follows the same methods as the sharing of any other information. However, advanced key establishment protocols that may need specialized software or synchronous communication are not currently included as methods, due to being unrelated to the context and examples of use we are considering here. Thus, shared key exchange, which is sensitive information, must take place using a channel that is assumed to be secure (e.g. in person exchange, a phone call or other method) depending on the *vulnerability assumptions* in effect. 
 
 ## Attack Trees
-Attack trees are simple axioms connecting a high-level characterization of the attack (the negation of a security requirement) with a logical formula describing conditions under which the security requirement is breached. Notice that the components of the formula appear in any of: effects and preconditions of operations and/or methods, vulnerability assumptions, domain assumptions. 
+Attack trees are simple axioms connecting a high-level characterization of the attack (the negation of a security requirement) with a logical formula describing conditions under which the attack is accomplished, hence the security requirement successfully breached. Notice that the components of the formula appear in any of: effects and preconditions of operations and/or methods, vulnerability assumptions or domain assumptions. 
 
 ## Domain and Security Requirements
-As mentioned in the paper a special action is added in the domain specification for the purpose of enforcing its precondition. This is due to the fact that SHOP2’s problem specification is written in the form of a top level method rather than a goal state. Thus a method we call accomplishment is introduced with preconditions being security as well as other domain requirements. Successful fulfilment of these preconditions allows the planner to execute “done”, a dummy unconditional action.
+As mentioned in the paper, a special action is added in the domain specification for the purpose of enforcing its precondition. This is due to the fact that SHOP2’s problem specification is written in the form of a top level method rather than a goal state. Thus, a method we call ```final``` is introduced and security and other domain requirements are added as preconditions. Successful fulfilment of these preconditions allows the planner to execute “done”, a dummy unconditional action.
 
 ## Problem Specification
-### Domain and Vulnerability Assumptions
-The domain and vulnerability assumptions are part of the problem specification, specifically the description of the of the initial state.
 
-### Main Problem Definition
-Problem definition is based on the specification of the top-level method (in our case “transmit-information”) preceded by a manage-keys call and followed by “accomplishment”, which must be achieved in any successful plan. [Obviously the three constituent methods can be further abstracted into a top level method.] 
+### Domain and Vulnerability Assumptions
+The domain and vulnerability assumptions are part of the problem specification and specifically the description of the _initial state_. THus:
 
 ```lisp
+	(defproblem problem1 sec
+		(
+		; +++++++++++++++++++++++++++++++++++++++++
+		; + D O M A I N    A S S U M P T I O N S  +
+		; +++++++++++++++++++++++++++++++++++++++++
+	   
+		(has contractor order local-drive digital-file)
+		(has supplier invoice local-drive digital-file)
+	
+		(allow email)
+		(allow phonecall)
+
+		(has contractor supplier email-address)
+		(has supplier contractor email-address)
+		(has contractor supplier phone-number)
+		(has supplier contractor phone-number)
+	
+		; +++++++++++++++++++++++++++++++++
+		; +   V U L N E R A B I L I T Y   +     
+		; +     A S S U M P T I O N S     +
+		; +++++++++++++++++++++++++++++++++
+		(is-compromised network)
+		(is-compromised contractor mailbox)
+
+	) 
+	
+	;...  main problem below
+```
+
+### Main Problem Definition
+Problem definition is based on the specification of the top-level method (in our case ```transmit-information```) preceded by a ```manage-keys``` call and followed by ```final```, which must be achieved in any successful plan. Obviously, the three constituent methods can be further abstracted into a top level method.
+
+```lisp
+
+	; ... initial state above
+	
 	(:ordered
 		(manage-keys doctor patient)
 		(transmit-information doctor patient proof-of-visit)
-		(accomplishment)
+		(final)
 	)
 ```
 
@@ -103,13 +148,17 @@ To identify plans, SHOP2 requires running
 (find-plans 'problem1 :verbose :plans :optimize-cost t)
 ```
 
+(Please see below for rough installation instructors.)
+
 ## Running Example
 
-Let us now explore the example of the interaction between the supplier and the contractor in the running example of the paper. Recall that the interaction is that the contractor places an order to the supplier, who, in turn issues an invoice to be sent to the contractor.
+Let us now explore the example of the interaction between the supplier and the contractor as seen in the paper. As stated above, the example here is much more elaborate than the one that has been presented in the paper for the interest of simplicity.
 
-### Case 1 – No security requirements and not vulnerability assumptions.
+Recall that the interaction is that the contractor places an order to the supplier, who, in turn issues an invoice to be sent to the contractor.
 
-We start with the scenario in which no security requirements are given. 
+### Case 1 – No security requirements and no vulnerability assumptions.
+
+We start with the scenario in which no security requirements are given. Thus in the final method we have:
 
 ```lisp
     (:method 
@@ -131,7 +180,7 @@ We start with the scenario in which no security requirements are given.
     )
 ```
 
-... and...
+... and the problem definition is ...
 
 ```lisp
 (defproblem problem1 sec
@@ -169,7 +218,7 @@ We start with the scenario in which no security requirements are given.
 ) ; end of problem specification
 ```
 
-In such case the planner will not be constrained in any way to produce the cheapest possible plan, which may involve the simple transfer of the document from sender to recipient in plaintext, thus plan:
+In such case, the planner will not be constrained in any way to produce the cheapest possible plan, which may involve the simple transfer of the document from sender to recipient in plaintext, thus plan:
 
 ```text
 Defining problem PROBLEM1 ...
@@ -184,12 +233,12 @@ Plans:
   (!NA) (!NA) (!NA) (!DONE)))
 ```
 
-When looking at the plan we discard all the (!NA) actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contractor, without any security steps. Note also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
+When looking at the plan we discard all the (!NA) actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contractor, without any security steps. Notice also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
 
 
 ### Case 2 – Invoice confidential.
 
-Let us now assume that we specify an authentication requirement: the contractor wants to be able to authenticate that the invoice comes indeed from the supplier:
+Let us now assume that we specify a confidentiality requirement: the contractor wants to be able to ensure that has not been read by unauthorized parties. We state this requirement through a negated attack:
 
 ```lisp
 		; ++++++++++++++++++++++++++++++++++++++++++++++
@@ -214,7 +263,7 @@ Plans:
   (!NA) (!NA) (!NA) (!DONE)))
 ```
 
-That is, there will be no security steps when the attackers are not assumed to engage in any attack. If we do assume we protect against certain attacks, such as for example, compromised mailboxes and networks then we add the corresponding vulnerability assumptions:
+That is, there will be no security steps when the attackers are not assumed to engage in any attack. If we do assume we protect against certain attacks, such as for example, compromised mailboxes and networks then we need to add the corresponding vulnerability assumptions:
 
 
 ```lisp
@@ -249,11 +298,11 @@ Plans:
 
 ``` 
 
-The plan says that the supplier now needs to generate a key, call the contractor to share the key and then symmetrically encrypt the document before sending it by email. In practice this means that the PDF or DOC is protected with a password within the corresponding document editing or word processing tools; and the password is exchanged via a channel for which no vulnerability has been assumed. The planner avoids asymmetric encryption which is more expensive as it requires installation of specialized software.
+The plan says that the supplier now needs to generate a key, call the contractor to share the key and then symmetrically encrypt the document before sending it by email. In practice, this may means that the PDF or DOC is protected with a password within the corresponding document editing or word processing tools; and the password is exchanged via a channel for which no vulnerability has been assumed. The planner avoids asymmetric encryption which is more expensive as it requires installation of specialized software.
 
-### Case 3 – Authenticate the invoice.
+### Case 3 – Contractor wants to authenticate the invoice.
 
-Let us now assume that we specify an authenticity requirement: the contractor does not want unauthorised users to read the invoice. We then consider the following while keeping all else as-is:
+Let us now assume that we specify an authenticity requirement: the contractor does not want unauthorised users to read the invoice. We then consider the following security requriements while keeping all else as-is:
 
 ```lisp
 		; ++++++++++++++++++++++++++++++++++++++++++++++
@@ -292,6 +341,17 @@ In this case the supplier will digitally sign the document prior to sending it t
 
 Let us finally assume that both authentication and encryption are needed:
 
+```lisp
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+		; + S E C U R I T Y    R E Q U I R E M E N T S +
+		; ++++++++++++++++++++++++++++++++++++++++++++++
+
+		(authenticated contractor supplier invoice)
+		(not (intercept-successful supplier contractor invoice))
+```
+
+Then we will get the following plan:
+
 ```text
 Defining problem PROBLEM1 ...
 ---------------------------------------------------------------------------
@@ -321,9 +381,9 @@ Plans:
 
 ```
 
-The above plan suggest that the document will be signed using a public key exchanged by email and then symmetrically encrypted, with key exchanged over a phone call, before it is sent over by email for decryption and verification.
+The above plan suggests that the document will be signed using a public key exchanged by email and then symmetrically encrypted, with key exchanged over a phone call, before it is sent over by email for decryption and verification.
 
-One may doubt however that this is the most convenient way of doing it. Indeed the specification does not have a fine-tuned cost scheme at this point that would catch that since asymmetric encryption software has been installed, encryption may as well be asymmetric, saving a phone call. Even then, though, the analysts can simply artificially disallow symmetric encryption, e.g. through an ad-hoc precondition or assumptions such as:
+One may doubt, however, that this is the most convenient way of doing it. Indeed, the specification does not have a fine-tuned cost scheme at this point that would recognize that, since asymmetric encryption software has been installed for the signatures, encryption may as well be asymmetric, saving the phone call for the shared key exchange. Even then, though, the analysts can simply artificially disallow symmetric encryption, e.g. through an ad-hoc precondition or assumptions such as:
 
 ```lisp
 		; ++++++++++++++++++++++++++++++++++++++++++++++
@@ -331,7 +391,7 @@ One may doubt however that this is the most convenient way of doing it. Indeed t
 		; ++++++++++++++++++++++++++++++++++++++++++++++
 
 		... [as above]
-		(not 	(has supplier (key supplier contractor shared) local-drive digital-file)
+		(not (has supplier (key supplier contractor shared) local-drive digital-file)
 ```
 So now, we demand that at no point is there a shared key generated. The planner will respond as follows:
 
@@ -363,7 +423,7 @@ Plans:
   (!NA) (!DONE)))
 ```
 
-... which involves asymmetric signing, encryption, emailing, decryption and verification.
+... which involves asymmetric signing, encryption, emailing, decryption and verification. 
 
 
 # Installation Instructions (Windows)
