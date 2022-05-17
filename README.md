@@ -9,14 +9,15 @@ The listing, found at the bottom, can be compiled and used as-is by the SHOP2 pl
 # The Model
 
 ## Key aspects
-The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use. The possibilities are by no means meant to be exhaustive but rather to provide an illustration of the reasoning framework that is proposed. 
+The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use. The possibilities are by no means meant to be exhaustive but rather to provide an illustration of the modeling and reasoning possibilities available through out framework. 
 
 ## Computational Devices
 Participants in the workflows are assumed to have access to the following devices:
 * A PC or other computer connected to the internet. The PC is the only devices where cryptographic functions can be executed.
 * A mobile phone, capable of sending text messages with file attachments. Actors can connect their phone to their PC to exchange files. 
 * A printer and a scanner (with no handwriting recognition). 
-* 
+* USB drives or other portable digital storage medium
+
 ## Formats and Media
 
 Information is at any point in time available with an actor. A special predicate is used to signify this:
@@ -27,8 +28,8 @@ While ``` ?agent ``` and ```?info``` can be anything, ```?medium``` and ```?form
 
 Possibilities for medium:
 * Local-drive: meaning the hard-drive of the PC
-* shared-folder: implies that the file exists also in the cloud and accessible for anyone with access to the cloud account
-* mailbox: the inbox or outbox of an agent’s email account, which is assumed to reside both on a server and on a local copy.
+* shared-folder: implies that the file exists also in the cloud and accessible for anyone with access to the cloud account. (unused)
+* mailbox: the inbox or outbox of an agent’s email account, which is assumed to reside both on a server and as a local copy.
 * phone: any part of the agent’s smartphone (e.g. text messages, file-system or email app), such that hacking the phone implies full access to that location.
 * USB: shorthand for any portable digital storage device, including e.g. CDs, DVDs or other media.
 * Physical: any physical location in which an agent has access: e.g., their pocket or their desk. 
@@ -37,10 +38,10 @@ Possibilities for format:
 * digital-file
 * paper which can be either printed (thus, OCR-able) or handwritten.
 
-Information can be scanned, typed-up and copied from one machine to another. Printing information is omitted for simplicity. When appropriate, we assume that users will naturally expand the attack by copying the information from one medium to the other for example:
-* Information in shared-drive will eventually sync to the local-drive
-* Information in the e-mailbox, will be copied to local-drive.
-
+Information can be scanned, typed-up and copied from one machine to another. Printing information is omitted for simplicity; anything digitally available can be assumed to printed as well. We generally assume that users and/or the technology they use will perform actions that inadvertently expand the attack surface by copying the information from one medium to the other. For example the following assumptions:
+* Information in shared-drive will eventually sync to the local-drive.
+* Information in the e-mailbox (e.g. an attachment), will be downloaded to local-drive.
+.. mean that compromising a user's PC, automatically means that information in their server-side mailboxes and shared drive is also vulnerable through user syncronization actions or, e.g., login monitoring and credentials theft.
 
 ## Transferring information
 Information can be transferred in any of the following ways:
@@ -48,7 +49,7 @@ Information can be transferred in any of the following ways:
 * SMS, i.e., text messaging, which is assumed to also support attachments.
 * Phone-call oral exchange, whereby one actor is calling another and offers the information verbally. The other actor is assumed to jot down the information manually in their physical space. 
 * In person exchange, whereby one actor visits the physical space of another actor and delivers the information in paper or digital format (e.g. USB key).
-* In person oral exchange, like phone-call oral exchange but resulting from a visit to another persons space.
+* In person oral exchange, like phone-call oral exchange but requiring a visit to another persons space.
 
 ## Encryption and Decryption Methods
 
@@ -57,7 +58,9 @@ Encryption can be _symmetric_ or _asymmetric_. In the former case the participan
 For asymmetric encryption public/private key pairs need to be generated and the public parts exchanged in a way that is not necessarily secured. We however assume that the standard versions of document viewers and processors do not trivially support public key cryptography. As such, specialized software needs to be installed for such, such as for example [OpenPGP](https://www.openpgp.org/).
 
 ## Digital Signatures
-Digital signing is assumed to be asymmetric through the use of third-party software such as [OpenPGP](https://www.openpgp.org/). It is further assumed that signing and encryption take place independently and in this order when both are needed. 
+Digital signing is generally asymmetric through the use of third-party software such as [OpenPGP](https://www.openpgp.org/). It is further assumed that signing and encryption take place independently and in this order when both are needed. Uncompromised signing guarantees authentication, protection against tampering and non-repudiation.
+
+The model does not support message authentication codes (MAC) which is the symmetric counterpart of digital signing but with limited guarantees.
 
 ## Key management
 Key management is a step that generally precede encryption and/or signing, and involves key generation and sharing. The sharing of keys follows the same methods as the sharing of any other information. However, advanced key establishment protocols that may need specialized software or synchronous communication are not currently included as methods, due to being unrelated to the context and examples of use we are considering here. Thus, shared key exchange, which is sensitive information, must take place using a channel that is assumed to be secure (e.g. in person exchange, a phone call or other method) depending on the *vulnerability assumptions* in effect. 
