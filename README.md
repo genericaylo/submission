@@ -157,7 +157,7 @@ Alternativelly we can define a domain specific method:
 
 # Relationship to Goal Models
 
-<img src="[drawing.jpg](https://github.com/genericaylo/submission/blob/main/img/translation.png?raw=true)" alt="Description of relationship between goal diagrams and resulting HTN spec chunks" width="200"/>
+<img src="https://github.com/genericaylo/submission/blob/main/img/translation.png?raw=true" alt="Description of relationship between goal diagrams and resulting HTN spec chunks" width="200"/>
 
 # Running 
 To identify plans, SHOP2 requires running 
