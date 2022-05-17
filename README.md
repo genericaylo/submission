@@ -157,7 +157,10 @@ Alternativelly we can define a domain specific method:
 
 # Relationship to Goal Models
 
-<img src="https://github.com/genericaylo/submission/blob/main/img/translation.png?raw=true" alt="Description of relationship between goal diagrams and resulting HTN spec chunks" width="200"/>
+The image below shows how the various visual elements developed in STS-ml are translated into the various chunks of the HTN specs. The actual transmission of the invoice (a domain specific requirement) is translated into the generic method ```transmit-document ...``` taken from the community-maintained repository. The security requirements, appearing as decorations at the bottom of the document shape (the large rectangle) are translated into preconditions of the ```final``` action after possibly being formulated as negated heads of attack trees. 
+
+
+<img src="https://github.com/genericaylo/submission/blob/main/img/translation.png?raw=true" alt="Description of relationship between goal diagrams and resulting HTN spec chunks" width="450"/>
 
 # Running 
 To identify plans, SHOP2 requires running 
