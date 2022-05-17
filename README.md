@@ -155,6 +155,10 @@ Alternativelly we can define a domain specific method:
 	)
 ```
 
+# Relationship to Goal Models
+
+!(Description of relationship between goal diagrams and resulting HTN spec chunks)[https://github.com/genericaylo/submission/blob/main/img/translation.png?raw=true]
+
 # Running 
 To identify plans, SHOP2 requires running 
 ```lisp
