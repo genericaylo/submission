@@ -1,9 +1,9 @@
 # Overview
-The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission *"Towards automating security requirements implementation using secure workflow patterns"*. The listing is presented at the bottom of this page and can also be downloaded as a LISP file in the repository. It contains: (a) workflow patterns for securely transmitting information between two actors using various communication channels and utilizing cryptographic primitives, (b) example attack trees for confidentiality, authentication and integrity. In later sections, we use these assets to reason with various security requirements and vulnerability assumptions. 
+The following is the HTN SHOP2 sample specification accompanying our MODELS 2022 submission *"Towards automating security requirements implementation using secure workflow patterns"*. [The listing](https://github.com/genericaylo/submission/blob/main/listing/MODELS2022.lisp) can be downloaded as a LISP file from the repository. It contains: (a) workflow patterns for securely transmitting information between two actors using various communication channels and utilizing cryptographic primitives, (b) example attack trees for confidentiality, authentication and integrity. In later sections, we use these assets to reason with various security requirements and vulnerability assumptions. 
 
 The presented formalization here is much more complex and uses different conventions than the ones in the paper (e.g. second order LISP-like terms are extensively used), without, however, departing from the main ideas and vision in the paper. The formalization can be seen as one of the many possible that can be devised for solving the same problem domain (securely transferring documents between two parties) and is given as an example of what is possible rather than an authoritative model for the domain. The formalization of choice is a result of balancing between expressiveness, exact reasoning needs (e.g. do we need to reason about many different channels?), and computational efficiency and requires substantial validation effort with domain experts. These tasks are central for our future research agenda.
 
-The listing, found at the bottom, can be compiled and used as-is by the SHOP2 planner. Installation instructions are provided below.
+[The listing](https://github.com/genericaylo/submission/blob/main/listing/MODELS2022.lisp) can be compiled and used as-is by the SHOP2 planner. Installation instructions are provided below.
 
 
 # The Model
@@ -449,6 +449,6 @@ Plans:
 
 * Install a list in your system. We have tried it with [Steel Bank Common Lisp](http://www.sbcl.org/).
 * Install SHOP3 following directions [in their github page](https://github.com/shop-planner/shop3). We used the quicklisp installation option solution on windows successfully.
-* Save the listing below in a .lisp file, such as ``` Example.lisp```
+* Save [the listing](https://github.com/genericaylo/submission/blob/main/listing/MODELS2022.lisp) in a .lisp file, such as ``` Example.lisp```
 * Once in sbcl and SHOP3 is loaded (e.g. through a ```(load "~/init.lisp")```, run ```(load "Example.lisp")```
 * You can make changes to the .lisp file and reload as above; definitions will be replaced.
