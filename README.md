@@ -11,6 +11,8 @@ The listing, found at the bottom, can be compiled and used as-is by the SHOP2 pl
 ## Key aspects
 The specification focusses on the exchange of information between two parties making certain assumptions on the devices and media in which the information is stored, and the computational devices that the participants use. The possibilities are by no means meant to be exhaustive but rather to provide an illustration of the modeling and reasoning possibilities available through out framework. 
 
+Note that the entire domain specification, except for the attack tree axioms and the final method, is really an HTN description of an large and complex AND/OR goal decomposition, where methods are used to implement intermediate AND and OR decomposed nodes. Thus, the entire specification can be visualized using iStar 2.0 constructs. 
+
 ## Computational Devices
 Participants in the workflows are assumed to have access to the following devices:
 * A PC or other computer connected to the internet. The PC is the only devices where cryptographic functions can be executed.
@@ -63,10 +65,21 @@ Digital signing is generally asymmetric through the use of third-party software 
 The model does not support message authentication codes (MAC) which is the symmetric counterpart of digital signing but with limited guarantees.
 
 ## Key management
-Key management is a step that generally precede encryption and/or signing, and involves key generation and sharing. The sharing of keys follows the same methods as the sharing of any other information. However, advanced key establishment protocols that may need specialized software or synchronous communication are not currently included as methods, due to being unrelated to the context and examples of use we are considering here. Thus, shared key exchange, which is sensitive information, must take place using a channel that is assumed to be secure (e.g. in person exchange, a phone call or other method) depending on the *vulnerability assumptions* in effect. 
+Key management is a step that generally precedes encryption and/or signing, and involves key generation and sharing. The sharing of keys follows the same methods as the sharing of any other information. However, advanced key establishment protocols (e.g. Diffie-Hellman) that may need specialized software or synchronous communication are not currently included as methods, due to being unrelated to the context and examples of use we are considering here. Thus, shared key exchange, which is sensitive information, must take place using a channel that is assumed to be secure (e.g. in person exchange, a phone call or other method) depending on the *vulnerability assumptions* in effect. 
 
 ## Attack Trees
-Attack trees are simple axioms connecting a high-level characterization of the attack (the negation of a security requirement) with a logical formula describing conditions under which the attack is accomplished, hence the security requirement successfully breached. Notice that the components of the formula appear in any of: effects and preconditions of operations and/or methods, vulnerability assumptions or domain assumptions. 
+Attack trees are simple axioms connecting a high-level characterization of the attack (the negation of a security requirement) with a logical formula describing conditions under which the attack is accomplished, hence the security requirement successfully breached. Notice that the components of the formula appear in any of: effects and preconditions of operations and/or methods, vulnerability assumptions or domain assumptions. The following attack trees are introduced:
+
+* **Con** ``` (ConBreached ?sender ?recipient ?info) <= ...``` followed by various combinations of effects and assumptions that make such breach possible. The predicate means that a piece of ```?info``` transmitted from ```?sender``` to ```?receiver``` was read by an unauthorized third party.
+* **Int** ``` (IntBreached ?sender ?recipient ?info) <= ...``` followed by various combinations of effects and assumptions that make such breach possible. The predicate means that a piece of ```?info``` transmitted from ```?sender``` to ```?receiver``` was altered by an unauthorized third party.
+* **Auth** ``` (AuthSuccessful ?sender ?recipient ?info) <= (and (authenticated ?recipient ?sender ?info) (not (IntBreached ?sender ?recipient ?info) ))``` meaning that authentication is successful for ```?info``` being transmitted from ```?sender``` to ```?recipient```, if the ```?recipient``` was able to authenticate that the ```?info``` was indeed of the ```?recipient``` and that any tampering related to this exchange was not possible (e.g. no private key reached a compromised location, invalidating a signature).
+* **NonRep** ``` (Repudiate ?agent ?info) <= (not (AuthSuccessful ?agent ?recipient ?info))``` meaning that ```?agent``` can repudiate that  ```?info``` never originated by them if in the solution there is no ```?recipient``` that successfully authenticates ```?info```.
+
+A few remarks here:
+* The attack tree "heads" (the LHS of the implications) describe a breach within the context of a transmission of information from a sender to a receiver, since different requirements may be posed for different such instances.
+* The heads are not necessarily negative, such as the authentication one that is used without negation.
+* The axioms are work in progress and subject to revisions during this exploratory phase. For example, a more accurate axiom for NonRep could be technology-specific: that the agent has actually signed the information in an uncompromised fashion and has shared the document and signature with an independent agent that can serve as judge. This would however require some additions to the constructions.
+* Additional axioms may be needed for various security or privacy requirements and complex formulations thereof including non-disclosure, redundancy, retention or disposal etc.
 
 ## Domain and Security Requirements
 As mentioned in the paper, a special action is added in the domain specification for the purpose of enforcing its precondition. This is due to the fact that SHOP2’s problem specification is written in the form of a top level method rather than a goal state. Thus, a method we call ```final``` is introduced and security and other domain requirements are added as preconditions. Successful fulfilment of these preconditions allows the planner to execute “done”, a dummy unconditional action.
@@ -120,17 +133,39 @@ Problem definition is based on the specification of the top-level method (in our
 	)
 ```
 
+Alternativelly we can define a domain specific method:
+```lisp
+    (:method 
+	(sendInvoice ?sender ?recipient) ;name
+	() ; precondition
+	(:ordered
+		(manage-keys ?sender ?recipient)
+		(transmit-information ?sender ?recipient invoice)
+		(final)
+	)
+    )
+```
+
+... and have the main method use that instead:
+
+```lisp
+	; ... initial state above
+	(:ordered
+		(sendInvoice supplier contractor)
+	)
+```
+
 # Running 
 To identify plans, SHOP2 requires running 
 ```lisp
 (find-plans 'problem1 :verbose :plans :optimize-cost t)
 ```
 
-(Please see below for rough installation instructors.)
+Please see below for rough installation instructions.
 
 ## Running Example
 
-Let us now explore the example of the interaction between the supplier and the contractor as seen in the paper. As stated above, the example here is much more elaborate than the one that has been presented in the paper for the interest of simplicity.
+Let us now explore the example of the interaction between the supplier and the contractor as seen in the paper. As stated above, the example here is much more elaborate than the one that has been presented in the paper, which was simplified due to space constraints.
 
 Recall that the interaction is that the contractor places an order to the supplier, who, in turn issues an invoice to be sent to the contractor.
 
@@ -170,7 +205,6 @@ We start with the scenario in which no security requirements are given. Thus in 
 		(has supplier invoice local-drive digital-file)
 
 		(allow email)
-		(allow sms)
 		(allow phonecall)
 
 		(has contractor supplier email-address)
@@ -211,7 +245,7 @@ Plans:
   (!NA) (!NA) (!NA) (!DONE)))
 ```
 
-When looking at the plan we discard all the (!NA) actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contractor, without any security steps. Notice also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
+When looking at the plan we discard all the ``` (!NA) ``` actions, which simply signify optional actions (e.g. key creation and exchange, encryption, etc.) that were not chosen. What remains is a simple email action of the invoice from the supplier to the contractor, without any security steps. Notice also the CPU time and inferences it takes to generate the plan, to compare with the examples that follow.
 
 
 ### Case 2 – Invoice confidential.
@@ -223,7 +257,7 @@ Let us now assume that we specify a confidentiality requirement: the contractor 
 		; + S E C U R I T Y    R E Q U I R E M E N T S +
 		; ++++++++++++++++++++++++++++++++++++++++++++++
 
-		(not (intercept-successful supplier contractor invoice))
+		(not (ConBreached supplier contractor invoice))
 ```
 
 However, we do not add any vulnerability assumptions. The planner will return the exact same plan:
@@ -234,7 +268,7 @@ Defining problem PROBLEM1 ...
 Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
 
 Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
-           1  -178.0  -178.0        392       7208     0.109      0.111
+           1  -178.0  -178.0        374       6911     0.109      0.109
 
 Plans:
 (((!NA) (!NA) (!NA) (!NA) (!NA) (!NA) (!EMAIL SUPPLIER CONTRACTOR INVOICE)
@@ -262,7 +296,7 @@ Defining problem PROBLEM1 ...
 Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
 
 Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
-           1   265.0   265.0      35122     841859     9.672      9.659
+           1   265.0   265.0      35123     841859     9.938      9.922
 
 Plans:
 (((!NA) (!NA) (!GENERATE-SYMMETRIC-KEY SUPPLIER CONTRACTOR) (!NA)
@@ -287,7 +321,7 @@ Let us now assume that we specify an authenticity requirement: the contractor do
 		; + S E C U R I T Y    R E Q U I R E M E N T S +
 		; ++++++++++++++++++++++++++++++++++++++++++++++
 
-		(authenticated contractor supplier invoice)
+		(AuthSuccessful supplier contractor invoice)
 ```
 
 The plan that will return now is different:
@@ -298,7 +332,7 @@ Defining problem PROBLEM1 ...
 Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
 
 Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
-           1  2544.0  2544.0      10299     225959     2.625      2.624
+           1  2544.0  2544.0      14853     334461     3.953      3.968
 
 Plans:
 (((!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
@@ -310,6 +344,7 @@ Plans:
   (!ASYMMETRIC-VERIFY CONTRACTOR SUPPLIER
    (SIGNED INVOICE (KEY SUPPLIER PRIVATE)) (KEY SUPPLIER PUBLIC))
   (!NA) (!DONE)))
+
 ```
 
 In this case the supplier will digitally sign the document prior to sending it to the contractor. However, encryption software needs to be installed (e.g. [OpenPGP](https://www.openpgp.org/software/kleopatra/)) and the supplier needs to generate a public-private key pair and share the public one. It does not matter that the public key goes through a compromised medium (email).
@@ -324,8 +359,8 @@ Let us finally assume that both authentication and encryption are needed:
 		; + S E C U R I T Y    R E Q U I R E M E N T S +
 		; ++++++++++++++++++++++++++++++++++++++++++++++
 
-		(authenticated contractor supplier invoice)
-		(not (intercept-successful supplier contractor invoice))
+		(not (ConBreached supplier contractor invoice))
+		(AuthSuccessful supplier contractor invoice)
 ```
 
 Then we will get the following plan:
@@ -336,7 +371,7 @@ Defining problem PROBLEM1 ...
 Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
 
 Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
-           1  2788.0  2788.0      38165     856093    10.047     10.047
+           1  2788.0  2788.0      38166     920896    10.422     10.418
 
 Plans:
 (((!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
@@ -374,13 +409,12 @@ One may doubt, however, that this is the most convenient way of doing it. Indeed
 So now, we demand that at no point is there a shared key generated. The planner will respond as follows:
 
 ```text
-
 Defining problem PROBLEM1 ...
 ---------------------------------------------------------------------------
 Problem #<SHOP3::PROBLEM PROBLEM1> with :WHICH = :FIRST, :VERBOSE = :PLANS, OPTIMIZE-COST = T
 
 Totals: Plans Mincost Maxcost Expansions Inferences  CPU time  Real time
-           1  3526.0  3526.0     215113    4880945    60.656     60.645
+           1  3526.0  3526.0     215114    5343986    63.703     63.709
 
 Plans:
 (((!INSTALL-ENCRYPTION-SOFTWARE SUPPLIER)
@@ -406,8 +440,8 @@ Plans:
 
 # Installation Instructions (Windows)
 
-* Install a list in your system. We have tryied it with [Steel Bank Common Lisp](http://www.sbcl.org/).
-* Install SHOP3 following direction [in the github page](https://github.com/shop-planner/shop3). We used the quicklisp installation option solution successfully.
+* Install a list in your system. We have tried it with [Steel Bank Common Lisp](http://www.sbcl.org/).
+* Install SHOP3 following directions [in their github page](https://github.com/shop-planner/shop3). We used the quicklisp installation option solution on windows successfully.
 * Save the listing below in a .lisp file, such as ``` Example.lisp```
 * Once in sbcl and SHOP3 is loaded (e.g. through a ```(load "~/init.lisp")```, run ```(load "Example.lisp")```
 * You can make changes to the .lisp file and reload as above; definitions will be replaced.
